@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { ItemCard } from '../components/ItemCard'; // 個別カードコンポーネント（省略）
 
 interface Item {
   id: string;
