@@ -14,8 +14,7 @@ import { SellPage } from './pages/SellPage';
 import { Purchase } from './pages/Purchase';
 import { ChatRoom } from './pages/ChatRoom';
 
-// Layout (ヘッダーなどを共通化するためのコンポーネントがあると仮定)
-// なければ div で囲むだけでもOKです
+// Layout
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen bg-gray-50">
     {/* ここにHeaderコンポーネントを入れると良いです */}
