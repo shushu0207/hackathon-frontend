@@ -3,13 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContexts';
 
-// 商品型定義 (APIレスポンスに合わせて調整)
+// 商品型定義
 interface ItemDetail {
   id: string;
   name: string;
   price: number;
   description: string;
-  image_url: string[];
+  image_urls: string[];
   seller_id: string;
   seller_name?: string;
   condition_rank: number;
@@ -20,47 +20,78 @@ export const ItemDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  
+  // 型引数を指定
   const [item, setItem] = useState<ItemDetail | null>(null);
   const [mainImage, setMainImage] = useState('');
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     if (!id) return;
+    
     fetch(`http://localhost:8080/items/${id}`) 
       .then(res => {
         if (!res.ok) {
             throw new Error('Network response was not ok');
         }
         return res.json();
-  })
-      .then((data: ItemDetailData) => {
-        setItem(data));
-      if (data.image_urls && data.image_urls.length > 0){
-        setMainImage(data.image_urls[0]);
-      }
-      setLoading(false);
-    })
-    .catch(err => {
+      })
+      .then((data: ItemDetail) => {
+        setItem(data);
+        
+        if (data.image_urls && data.image_urls.length > 0){
+          setMainImage(data.image_urls[0]);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
         console.error(err);
-        setLoading(false)
-    });
+        setLoading(false);
+      });
   }, [id]);
 
-  if (!item) return <div className="p-10 text-content">商品が見つかりませんでした</div>;
-  if (loading) return <div className="p-10 text-content">読み込み中</div>;
+  const handleContact = () => {
+    if (!currentUser) {
+        alert('ログインしてください');
+        return;
+    }
+    if (!item) return;
+
+    navigate(`/chat/${item.id}`, { 
+      state: { 
+        partnerId: item.seller_id, 
+        partnerName: item.seller_name 
+      } 
+    });
+  };
+
+  if (loading) return <div className="p-10 text-center">読み込み中</div>;
+  if (!item) return <div className="p-10 text-center">商品が見つかりませんでした</div>;
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:flex gap-8">
       {/* 左カラム: 画像 */}
       <div className="md:w-1/2">
-        <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden mb-4 border border-gray-200">
-            {item.is_sold && (<div className='absolute bg-red-600 text-white font-bold px-4 py-1 m-4 rounded z-10'>SOLD OUT</div>)}
-          <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+        
+        <div className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden mb-4 border border-gray-200">
+            {item.is_sold && (
+                <div className='absolute bg-red-600 text-white font-bold px-4 py-1 m-4 rounded z-10'>
+                    SOLD OUT
+                </div>
+            )}
+          <img src={mainImage || '/placeholder.png'} alt={item.name} className="w-full h-full object-cover" />
         </div>
-        {/* サムネイル一覧 (実装イメージ) */}
+        
+        
         <div className="flex gap-2 overflow-x-auto">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0"></div>
+          {item.image_urls?.map((url, i) => (
+            <div 
+                key={i} 
+                className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden cursor-pointer border hover:border-blue-500"
+                onClick={() => setMainImage(url)}
+            >
+                <img src={url} alt={`thumb-${i}`} className="w-full h-full object-cover"/>
+            </div>
           ))}
         </div>
       </div>
@@ -76,16 +107,24 @@ export const ItemDetail = () => {
           ¥{item.price.toLocaleString()}
         </div>
 
-        <div className="flex gap-4">
-          <Button 
-            onClick={() => navigate(`/purchase/${item.id}`)} 
-            className="flex-1 py-3 text-lg"
-          >
-            購入画面へ進む
-          </Button>
-          <Button variant="secondary" className="px-6 text-2xl">
-            ♥
-          </Button>
+        <div className="space-y-3">
+            <div className="flex gap-4">
+            <Button 
+                onClick={() => navigate(`/purchase/${item.id}`)} 
+                className="flex-1 py-3 text-lg"
+                disabled={item.is_sold} // 売り切れなら押せないようにする
+            >
+                {item.is_sold ? '売り切れ' : '購入画面へ進む'}
+            </Button>
+            <Button variant="secondary" className="px-6 text-2xl">
+                ♥
+            </Button>
+            </div>
+
+            
+            <Button variant="outline" onClick={handleContact} className="w-full">
+                出品者に質問する
+            </Button>
         </div>
 
         <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
@@ -108,24 +147,5 @@ export const ItemDetail = () => {
         </div>
       </div>
     </div>
-
-// 遷移ハンドラ
-const handleContact = () => {
-  if (!currentUser) return alert('ログインしてください');
-  if (!item) return;
-  // 自分が出品者の場合は遷移させない、もしくは購入者リストを表示するなどの分岐が必要
-  // ここでは「購入希望者として出品者に連絡する」パターン
-  navigate(`/chat/${item.id}`, { 
-    state: { 
-      partnerId: item.seller_id, // 商品情報にseller_idが含まれている前提
-      partnerName: item.seller_name 
-    } 
-  });
-};
-
-// ... JSX内 ...
-<Button variant="outline" onClick={handleContact} className="w-full mt-2">
-  出品者に質問する
-</Button>
   );
 };
