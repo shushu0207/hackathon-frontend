@@ -7,8 +7,9 @@ export const RegisterProfile = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { uid, email } = location.state || {};
-  
+
   const [username, setUsername] = useState('');
+  const [age, setAge] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -21,8 +22,9 @@ export const RegisterProfile = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: uid,           // Firebase UID をDBの主キーとして使う場合
+          firebase_uid: uid,           
           name: username,
+          age: Number(age),
           email: email,
         }),
       });
@@ -53,6 +55,19 @@ export const RegisterProfile = () => {
               onChange={(e) => setUsername(e.target.value)} 
               placeholder="表示名を入力" 
               required 
+            />
+          </div>
+
+          <div className='mt-4'>
+            <label className='text-sm font-bold text-gray-700'>年齢</label>
+            <Input
+              type='number'
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              placeholder='年齢を入力'
+              required
+              min="20"
+              max="80"
             />
           </div>
           <Button type="submit" disabled={loading} className="w-full py-3 mt-4">

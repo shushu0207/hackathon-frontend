@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { useAuth } from '../contexts/AuthContexts';
@@ -8,12 +8,19 @@ export const SellPage = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [name, setName] = useState('');
   const [keywords, setKeywords] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   // Gemini API呼び出し
   const handleAIGenerate = async () => {
@@ -44,26 +51,35 @@ export const SellPage = () => {
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImageFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async () => {
     if (!currentUser) return alert('ログインしてください');
     if (!name || !price || !description) return alert('必須項目を入力してください');
 
     setIsSubmitting(true);
     try {
-      const res = await fetch('http://localhost:8080/items',{
+      const formData = new FormData();
+      formData.append('seller_id', currentUser.uid); // seller_i のタイポ修正
+      formData.append('name', name);
+      formData.append('description', description);
+      formData.append('price', price); // 文字列のままでOK（Go側で変換するか、ここで数値にする）
+      formData.append('category_id', '1');
+      formData.append('condition', '3'); 
+      
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+
+      const res = await fetch('http://localhost:8080/items', {
         method: 'POST',
-        headers: {
-          'Content-Type':'application/json',
-        },
-        body: JSON.stringify({
-          seller_i: currentUser.uid,
-          name,
-          description,
-          price: parseInt(price,10),
-          category_id: 1,
-          conditon:3
-          // image_url: "..."
-        }),
+        body: formData, 
       });
 
       if (res.ok) {
@@ -85,12 +101,28 @@ export const SellPage = () => {
       <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">商品を出品する</h2>
 
       <div className="space-y-6">
-        {/* 画像アップロード（UIのみ） */}
-        <div className="border-2 border-dashed border-gray-300 rounded-xl h-48 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-50 transition cursor-pointer">
-          <span className="text-4xl">📷</span>
-          <span className="text-sm mt-2">クリックして写真をアップロード</span>
+        <div 
+          onClick={() => fileInputRef.current?.click()} // クリックでファイル選択を開く
+          className="border-2 border-dashed border-gray-300 rounded-xl h-48 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-50 transition cursor-pointer overflow-hidden"
+        >
+          {previewUrl ? (
+            <img src={previewUrl} alt="プレビュー" className="h-full w-full object-cover" />
+          ) : (
+            <>
+              <span className="text-4xl">📷</span>
+              <span className="text-sm mt-2">クリックして写真をアップロード</span>
+            </>
+          )}
+          {/* 隠しinput */}
+          <input 
+            type="file" 
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden" 
+            accept="image/*"
+          />
         </div>
-
+        
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">商品名</label>
           <Input 
