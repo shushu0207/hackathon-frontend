@@ -3,6 +3,7 @@ import { useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContexts';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { API_BASE_URL } from '../config';
 
 interface Message {
   id: string;
@@ -12,11 +13,13 @@ interface Message {
 }
 
 export const ChatRoom = () => {
-  const { itemId } = useParams(); // URLパラメータから取得
+  const { itemId } = useParams(); 
   const { currentUser } = useAuth();
   const location = useLocation();
-  // 商品詳細ページから遷移する際、stateで相手のIDと名前を渡す想定
-  const { partnerId, partnerName } = location.state as { partnerId: string, partnerName: string } || {};
+  
+  const state = location.state as { partnerId: string, partnerName: string } | null;
+  const partnerId = state?.partnerId || "";
+  const partnerName = state?.partnerName || "相手";
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -24,11 +27,10 @@ export const ChatRoom = () => {
 
   // メッセージ取得関数
   const fetchMessages = async () => {
-    if (!currentUser || !partnerId) return;
+    if (!currentUser || !partnerId || !itemId) return;
     try {
-      // API: GET /messages?item_id=...&user_a=...&user_b=...
       const res = await fetch(
-        `http://localhost:8080/messages?item_id=${itemId}&user_a=${currentUser.uid}&user_b=${partnerId}`
+        `${API_BASE_URL}/messages?item_id=${itemId}&user_a=${currentUser.uid}&user_b=${partnerId}`
       );
       if (res.ok) {
         const data = await res.json();
@@ -56,7 +58,7 @@ export const ChatRoom = () => {
     if (!inputText.trim() || !currentUser) return;
 
     try {
-      const res = await fetch('http://localhost:8080/messages', {
+      const res = await fetch(`${API_BASE_URL}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -69,12 +71,19 @@ export const ChatRoom = () => {
 
       if (res.ok) {
         setInputText('');
-        fetchMessages(); // 即時反映
-      }
-    } catch (err) {
+        fetchMessages();
+    } else {
       alert('送信に失敗しました');
     }
-  };
+  } catch (err) {
+    console.error(err);
+    alert('ネットワークエラーが発生しました');
+  }
+ };
+
+if (!partnerId) {
+  return <div className='p-8 text-center text-gray-500'>チャット相手が指定されていません</div>;
+}
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] max-w-2xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden mt-4">
