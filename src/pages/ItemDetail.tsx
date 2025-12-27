@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContexts';
+import { API_BASE_URL } from '../config'; 
 
-// 商品型定義
 interface ItemDetail {
   id: string;
   name: string;
@@ -21,15 +21,13 @@ export const ItemDetail = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   
-  // 型引数を指定
   const [item, setItem] = useState<ItemDetail | null>(null);
   const [mainImage, setMainImage] = useState('');
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     if (!id) return;
-    
-    fetch(`http://localhost:8080/items/${id}`) 
+    fetch(`${API_BASE_URL}/items/${id}`) 
       .then(res => {
         if (!res.ok) {
             throw new Error('Network response was not ok');
@@ -70,9 +68,7 @@ export const ItemDetail = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:flex gap-8">
-      {/* 左カラム: 画像 */}
       <div className="md:w-1/2">
-        
         <div className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden mb-4 border border-gray-200">
             {item.is_sold && (
                 <div className='absolute bg-red-600 text-white font-bold px-4 py-1 m-4 rounded z-10'>
@@ -81,7 +77,6 @@ export const ItemDetail = () => {
             )}
           <img src={mainImage || '/placeholder.png'} alt={item.name} className="w-full h-full object-cover" />
         </div>
-        
         
         <div className="flex gap-2 overflow-x-auto">
           {item.image_urls?.map((url, i) => (
@@ -96,7 +91,6 @@ export const ItemDetail = () => {
         </div>
       </div>
 
-      {/* 右カラム: 情報 & アクション */}
       <div className="md:w-1/2 space-y-6 mt-6 md:mt-0">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{item.name}</h1>
@@ -112,7 +106,7 @@ export const ItemDetail = () => {
             <Button 
                 onClick={() => navigate(`/purchase/${item.id}`)} 
                 className="flex-1 py-3 text-lg"
-                disabled={item.is_sold} // 売り切れなら押せないようにする
+                disabled={item.is_sold}
             >
                 {item.is_sold ? '売り切れ' : '購入画面へ進む'}
             </Button>
@@ -120,7 +114,6 @@ export const ItemDetail = () => {
                 ♥
             </Button>
             </div>
-
             
             <Button variant="outline" onClick={handleContact} className="w-full">
                 出品者に質問する

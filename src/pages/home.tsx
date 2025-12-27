@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config'; 
 
-// 1. ここで「1つの商品」が持つデータの型を定義します
-// バックエンドのJSONレスポンスと名前を合わせる必要があります
 interface Item {
   id: string;
   name: string;
@@ -18,8 +17,8 @@ export const Home = () => {
 
   const fetchItems = (searchQuery = '') => {
     const url = searchQuery
-      ? `http://localhost:8080/items?name=${encodeURIComponent(searchQuery)}`
-      : 'http://localhost:8080/items';
+      ? `${API_BASE_URL}/items?name=${encodeURIComponent(searchQuery)}`
+      : `${API_BASE_URL}/items`;
 
     fetch(url)
       .then(res => res.json())

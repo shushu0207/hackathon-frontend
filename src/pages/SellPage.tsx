@@ -3,6 +3,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { useAuth } from '../contexts/AuthContexts';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 export const SellPage = () => {
   const { currentUser } = useAuth();
@@ -21,13 +22,11 @@ export const SellPage = () => {
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-
-  // Gemini API呼び出し
   const handleAIGenerate = async () => {
     if (!name) return alert('商品名を入力してください');
     setIsLoadingAI(true);
     try {
-      const res = await fetch('http://localhost:8080/api/ai/generate', {
+      const res = await fetch(`${API_BASE_URL}/api/ai/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -66,18 +65,17 @@ export const SellPage = () => {
     setIsSubmitting(true);
     try {
       const formData = new FormData();
-      formData.append('seller_id', currentUser.uid); // seller_i のタイポ修正
+      formData.append('seller_id', currentUser.uid); 
       formData.append('name', name);
       formData.append('description', description);
-      formData.append('price', price); // 文字列のままでOK（Go側で変換するか、ここで数値にする）
+      formData.append('price', price); 
       formData.append('category_id', '1');
       formData.append('condition', '3'); 
       
       if (imageFile) {
         formData.append('image', imageFile);
       }
-
-      const res = await fetch('http://localhost:8080/items', {
+      const res = await fetch(`${API_BASE_URL}/items`, {
         method: 'POST',
         body: formData, 
       });
@@ -102,7 +100,7 @@ export const SellPage = () => {
 
       <div className="space-y-6">
         <div 
-          onClick={() => fileInputRef.current?.click()} // クリックでファイル選択を開く
+          onClick={() => fileInputRef.current?.click()} 
           className="border-2 border-dashed border-gray-300 rounded-xl h-48 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-50 transition cursor-pointer overflow-hidden"
         >
           {previewUrl ? (
@@ -113,7 +111,6 @@ export const SellPage = () => {
               <span className="text-sm mt-2">クリックして写真をアップロード</span>
             </>
           )}
-          {/* 隠しinput */}
           <input 
             type="file" 
             ref={fileInputRef}
@@ -132,7 +129,6 @@ export const SellPage = () => {
           />
         </div>
 
-        {/* AI アシストセクション */}
         <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
           <input
             className='mb-3 text-sm'

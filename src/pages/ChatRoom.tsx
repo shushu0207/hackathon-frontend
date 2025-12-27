@@ -16,18 +16,14 @@ export const ChatRoom = () => {
   const { itemId } = useParams(); 
   const { currentUser } = useAuth();
   const location = useLocation();
-  
-  const state = location.state as { partnerId: string, partnerName: string } | null;
-  const partnerId = state?.partnerId || "";
-  const partnerName = state?.partnerName || "相手";
+  const { partnerId, partnerName } = location.state as { partnerId: string, partnerName: string } || {};
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // メッセージ取得関数
   const fetchMessages = async () => {
-    if (!currentUser || !partnerId || !itemId) return;
+    if (!currentUser || !partnerId) return;
     try {
       const res = await fetch(
         `${API_BASE_URL}/messages?item_id=${itemId}&user_a=${currentUser.uid}&user_b=${partnerId}`
@@ -41,14 +37,12 @@ export const ChatRoom = () => {
     }
   };
 
-  // 初回ロード & 定期ポーリング (3秒ごと)
   useEffect(() => {
     fetchMessages();
     const intervalId = setInterval(fetchMessages, 3000);
     return () => clearInterval(intervalId);
   }, [itemId, currentUser, partnerId]);
 
-  // 新着メッセージがあれば一番下へスクロール
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -72,22 +66,14 @@ export const ChatRoom = () => {
       if (res.ok) {
         setInputText('');
         fetchMessages();
-    } else {
+      }
+    } catch (err) {
       alert('送信に失敗しました');
     }
-  } catch (err) {
-    console.error(err);
-    alert('ネットワークエラーが発生しました');
-  }
- };
-
-if (!partnerId) {
-  return <div className='p-8 text-center text-gray-500'>チャット相手が指定されていません</div>;
-}
+  };
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] max-w-2xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden mt-4">
-      {/* ヘッダー */}
       <div className="bg-gray-100 p-4 border-b flex items-center justify-between">
         <h2 className="font-bold text-gray-700">
           {partnerName || 'ユーザー'} とのメッセージ
@@ -95,7 +81,6 @@ if (!partnerId) {
         <span className="text-xs text-gray-500">商品ID: {itemId}</span>
       </div>
 
-      {/* メッセージエリア */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
         {messages.map((msg) => {
           const isMe = msg.sender_id === currentUser?.uid;
@@ -119,7 +104,6 @@ if (!partnerId) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 入力エリア */}
       <form onSubmit={handleSend} className="p-4 bg-white border-t flex gap-2">
         <Input
           value={inputText}
