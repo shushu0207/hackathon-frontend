@@ -11,6 +11,9 @@ interface Item {
 }
 
 export const Home = () => {
+  
+  console.log("現在の接続先API:", API_BASE_URL); 
+
   const [items, setItems] = useState<Item[]>([]);
   const [keyword, setKeyword] = useState('');
   const navigate = useNavigate();
